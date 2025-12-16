@@ -2,34 +2,34 @@ import streamlit as st
 import pandas as pd
 import db
 
-st.title(':red[ห้องเรียน]')
+st.title(':red[คาบ]')
 st.divider()
 upload_data = st.file_uploader("อัปโหลดไฟล์", type=["csv", "xlsx"])
 
 # ==================== CONFIG ====================
-TABLE_NAME = "room"
-PRIMARY_KEY = "room_id"
-REQUIRED_COLS = ['room_id', 'room_name', 'room_type']
-ROOM_TYPE_OPTIONS = ['Theory', 'English Lab', 'Computer Lab', 'IOT Lab', 'Network Lab', 'Factory', 'AI', 'Lab']
+TABLE_NAME = "timeslot"
+PRIMARY_KEY = "timeslot_id"
+REQUIRED_COLS = ['timeslot_id', 'day', 'period', 'start', 'end']
+DAY_TYPE_OPTIONS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 
-# Column config สำหรับเพิ่มใหม่ (แก้ไข room_id ได้)
-room_columns_new = {
-    "room_id": st.column_config.TextColumn("รหัสห้องเรียน", required=True),
-    "room_name": st.column_config.TextColumn("ชื่อห้องเรียน", required=True),
-    "room_type": st.column_config.SelectboxColumn("ประเภทห้อง", required=True, options=ROOM_TYPE_OPTIONS)
+# Column config สำหรับเพิ่มใหม่ (แก้ไข timeslot_id ได้)
+timeslot_columns_new = {
+    "timeslot_id": st.column_config.TextColumn("รหัสคาบ", required=True),
+    "timeslot_name": st.column_config.TextColumn("ชื่อคาบ", required=True),
+    "timeslot_type": st.column_config.SelectboxColumn("วัน", required=True, options=DAY_TYPE_OPTIONS)
 }
 
-# Column config สำหรับแก้ไข (room_id disabled)
-room_columns_edit = {
-    "room_id": st.column_config.TextColumn("รหัสห้องเรียน", disabled=True),
-    "room_name": st.column_config.TextColumn("ชื่อห้องเรียน", required=True),
-    "room_type": st.column_config.SelectboxColumn("ประเภทห้อง", required=True, options=ROOM_TYPE_OPTIONS)
+# Column config สำหรับแก้ไข (timeslot_id disabled)
+timeslot_columns_edit = {
+    "timeslot_id": st.column_config.TextColumn("รหัสคาบ", disabled=True),
+    "timeslot_name": st.column_config.TextColumn("ชื่อคาบ", required=True),
+    "timeslot_type": st.column_config.SelectboxColumn("วัน", required=True, options=DAY_TYPE_OPTIONS)
 }
 
 
 # ==================== FUNCTIONS ====================
-def fetch_rooms():
-    """ดึงข้อมูลห้องเรียนทั้งหมด"""
+def fetch_timeslots():
+    """ดึงข้อมูลคาบทั้งหมด"""
     return pd.DataFrame(db.fetch_all(f"SELECT * FROM {TABLE_NAME}"))
 
 
@@ -38,29 +38,29 @@ def validate_data(df, existing_ids=None):
     errors = []
     warnings = []
 
-    empty_mask = df['room_id'].isna() | (df['room_id'].astype(str).str.strip() == '')
+    empty_mask = df['timeslot_id'].isna() | (df['timeslot_id'].astype(str).str.strip() == '')
     if empty_mask.any():
-        errors.append(f"❌ พบ room_id ว่างเปล่า {empty_mask.sum()} รายการ")
+        errors.append(f"❌ พบ timeslot_id ว่างเปล่า {empty_mask.sum()} รายการ")
 
-    duplicates = df[df.duplicated(subset=['room_id'], keep=False) & ~empty_mask]
+    duplicates = df[df.duplicated(subset=['timeslot_id'], keep=False) & ~empty_mask]
     if not duplicates.empty:
-        errors.append(f"❌ พบ room_id ซ้ำในไฟล์ {len(duplicates)} รายการ")
+        errors.append(f"❌ พบ timeslot_id ซ้ำในไฟล์ {len(duplicates)} รายการ")
 
     if existing_ids is not None:
         existing_set = set(existing_ids)
-        new_ids = set(df['room_id'].dropna().astype(str).str.strip())
+        new_ids = set(df['timeslot_id'].dropna().astype(str).str.strip())
         conflicts = new_ids & existing_set
         if conflicts:
-            errors.append(f"❌ พบ room_id ซ้ำกับในระบบ: {', '.join(conflicts)}")
+            errors.append(f"❌ พบ timeslot_id ซ้ำกับในระบบ: {', '.join(conflicts)}")
 
-    empty_names = df['room_name'].isna() | (df['room_name'].astype(str).str.strip() == '')
+    empty_names = df['timeslot_name'].isna() | (df['timeslot_name'].astype(str).str.strip() == '')
     if empty_names.any():
-        warnings.append(f"⚠️ พบ room_name ว่างเปล่า {empty_names.sum()} รายการ")
+        warnings.append(f"⚠️ พบ timeslot_name ว่างเปล่า {empty_names.sum()} รายการ")
 
-    invalid_types = ~df['room_type'].isin(ROOM_TYPE_OPTIONS) & df['room_type'].notna()
+    invalid_types = ~df['timeslot_type'].isin(DAY_TYPE_OPTIONS) & df['timeslot_type'].notna()
     if invalid_types.any():
-        bad_types = df.loc[invalid_types, 'room_type'].unique().tolist()
-        errors.append(f"❌ พบ room_type ไม่ถูกต้อง: {', '.join(map(str, bad_types))}")
+        bad_types = df.loc[invalid_types, 'timeslot_type'].unique().tolist()
+        errors.append(f"❌ พบ timeslot_type ไม่ถูกต้อง: {', '.join(map(str, bad_types))}")
 
     return errors, warnings, duplicates
 
@@ -68,14 +68,14 @@ def validate_data(df, existing_ids=None):
 def clean_data(df):
     """ทำความสะอาดข้อมูล"""
     df = df.copy()
-    for col in ['room_id', 'room_name']:
+    for col in ['timeslot_id', 'timeslot_name']:
         df[col] = df[col].astype(str).str.strip()
     return df
 
 
 # ==================== MAIN ====================
-rooms = fetch_rooms()
-existing_ids = rooms['room_id'].tolist() if not rooms.empty else []
+timeslots = fetch_timeslots()
+existing_ids = timeslots['timeslot_id'].tolist() if not timeslots.empty else []
 
 # ==================== IMPORT SECTION ====================
 if upload_data is not None:
@@ -94,7 +94,7 @@ if upload_data is not None:
             df[REQUIRED_COLS],
             num_rows="dynamic",
             use_container_width=True,
-            column_config=room_columns_new,
+            column_config=timeslot_columns_new,
             key="import_editor"
         )
 
@@ -111,17 +111,17 @@ if upload_data is not None:
 
         if not duplicates.empty:
             with st.expander("ดูรายการที่ซ้ำ"):
-                st.dataframe(duplicates, column_config=room_columns_new, use_container_width=True)
+                st.dataframe(duplicates, column_config=timeslot_columns_new, use_container_width=True)
 
         can_save = len(errors) == 0 and len(edited_df) > 0
 
         if st.button("💾 บันทึก", type="primary", disabled=not can_save, key="save_import"):
             try:
-                sql = f"INSERT INTO {TABLE_NAME} (room_id, room_name, room_type) VALUES (?, ?, ?)"
+                sql = f"INSERT INTO {TABLE_NAME} (timeslot_id, timeslot_name, timeslot_type) VALUES (?, ?, ?)"
                 count = 0
                 for _, row in edited_df.iterrows():
-                    if row['room_id']:
-                        db.execute(sql, (row['room_id'], row['room_name'], row['room_type']))
+                    if row['timeslot_id']:
+                        db.execute(sql, (row['timeslot_id'], row['timeslot_name'], row['timeslot_type']))
                         count += 1
                 st.success(f"✅ บันทึกสำเร็จ {count} รายการ")
                 st.balloons()
@@ -131,25 +131,25 @@ if upload_data is not None:
 
 # ==================== EXISTING DATA SECTION ====================
 st.divider()
-if rooms.empty:
+if timeslots.empty:
     st.info("📭 ยังไม่มีข้อมูลในระบบ")
 else:
-    st.subheader(f"📋 ข้อมูลในระบบ ({len(rooms)} รายการ)")
+    st.subheader(f"📋 ข้อมูลในระบบ ({len(timeslots)} รายการ)")
 
-    edited_rooms = st.data_editor(
-        rooms,
+    edited_timeslots = st.data_editor(
+        timeslots,
         num_rows="dynamic",
         use_container_width=True,
-        column_config=room_columns_edit,
+        column_config=timeslot_columns_edit,
         key="existing_editor"
     )
 
-    if not edited_rooms.equals(rooms):
+    if not edited_timeslots.equals(timeslots):
         if st.button("💾 บันทึกการแก้ไข", type="primary"):
             try:
-                for _, row in edited_rooms.iterrows():
-                    sql = f"UPDATE {TABLE_NAME} SET room_name=?, room_type=? WHERE room_id=?"
-                    db.execute(sql, (row['room_name'], row['room_type'], row['room_id']))
+                for _, row in edited_timeslots.iterrows():
+                    sql = f"UPDATE {TABLE_NAME} SET timeslot_name=?, timeslot_type=? WHERE timeslot_id=?"
+                    db.execute(sql, (row['timeslot_name'], row['timeslot_type'], row['timeslot_id']))
                 st.success("✅ บันทึกการแก้ไขสำเร็จ")
                 st.rerun()
             except Exception as e:

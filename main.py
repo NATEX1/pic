@@ -51,6 +51,9 @@ else:
         st.Page('_pages/timetable.py'),
         st.Page('_pages/logout.py'),
         st.Page('_pages/groups.py'),
+        st.Page('_pages/register.py'),
+        st.Page('_pages/teach.py'),
+        st.Page('_pages/timeslot.py'),
     ]
 
     pg = st.navigation(pages, position='hidden')
@@ -58,10 +61,13 @@ else:
 
     with st.sidebar:
         st.page_link(st.Page('_pages/home.py'), label='หน้าแรก', icon=':material/home:')
-        st.page_link(st.Page('_pages/teachers.py'), label='อาจารย์', icon=':material/group:')
+        st.page_link(st.Page('_pages/teachers.py'), label='ครู', icon=':material/group:')
         st.page_link(st.Page('_pages/subjects.py'), label='รายวิชา', icon=':material/book:')
         st.page_link(st.Page('_pages/rooms.py'), label='ห้องเรียน', icon=':material/meeting_room:')
-        st.page_link(st.Page('_pages/groups.py'), label='กลุ่มการเรียร', icon=':material/table_view:')
+        st.page_link(st.Page('_pages/groups.py'), label='กลุ่มการเรียน', icon=':material/table_view:')
+        st.page_link(st.Page('_pages/timeslot.py'), label='คาบ', icon=':material/add_row_above:')
+        st.page_link(st.Page('_pages/teach.py'), label='แผนการสอน', icon=':material/dictionary:')
+        st.page_link(st.Page('_pages/register.py'), label='ลงทะเบียนเรียน', icon=':material/list_alt:')
         st.page_link(st.Page('_pages/timetable.py'), label='ตาราง', icon=':material/table_view:')
 
         st.divider()
