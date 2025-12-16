@@ -11,14 +11,13 @@ TABLE_NAME = "teach"
 PRIMARY_KEY = "teacher_id"
 REQUIRED_COLS = ['teacher_id', 'subject_id']
 
-# ดึงข้อมูล teacher_id จากตาราง teacher
+# ==================== OPTIONS ====================
 def get_teacher_options():
     result = db.fetch_all("SELECT teacher_id FROM teacher")
     if not result:
         return []
     return [row['teacher_id'] for row in result]
 
-# ดึงข้อมูล subject_id จากตาราง register
 def get_subject_options():
     result = db.fetch_all("SELECT DISTINCT subject_id FROM register")
     if not result:
@@ -28,30 +27,44 @@ def get_subject_options():
 TEACHER_OPTIONS = get_teacher_options()
 SUBJECT_OPTIONS = get_subject_options()
 
-# Column config สำหรับเพิ่มใหม่ (แก้ไข teacher_id ได้)
+# ==================== COLUMN CONFIG ====================
 subject_columns_new = {
-    "teacher_id": st.column_config.SelectboxColumn("รหัสอาจารย์", required=True, options=TEACHER_OPTIONS),
-    "subject_id": st.column_config.SelectboxColumn("รหัสวิชา", required=True, options=SUBJECT_OPTIONS)
+    "teacher_id": st.column_config.SelectboxColumn(
+        "รหัสอาจารย์",
+        required=True,
+        options=TEACHER_OPTIONS
+    ),
+    "subject_id": st.column_config.SelectboxColumn(
+        "รหัสวิชา",
+        required=True,
+        options=SUBJECT_OPTIONS
+    )
 }
 
-# Column config สำหรับแก้ไข (teacher_id disabled)
 subject_columns_edit = {
-    "teacher_id": st.column_config.TextColumn("รหัสอาจารย์", disabled=True),
-    "subject_id": st.column_config.SelectboxColumn("รหัสวิชา", required=True, options=SUBJECT_OPTIONS)
+    "teacher_id": st.column_config.SelectboxColumn(
+        "รหัสอาจารย์",
+        required=True,
+        options=TEACHER_OPTIONS
+    ),
+    "subject_id": st.column_config.SelectboxColumn(
+        "รหัสวิชา",
+        required=True,
+        options=SUBJECT_OPTIONS
+    )
 }
-
 
 # ==================== FUNCTIONS ====================
 def fetch_subjects():
-    """ดึงข้อมูลวิชาที่สอนทั้งหมด"""
-    result = db.fetch_all(f"SELECT teacher_id, subject_id FROM {TABLE_NAME}")
+    result = db.fetch_all(
+        f"SELECT teacher_id, subject_id FROM {TABLE_NAME}"
+    )
     if not result:
         return pd.DataFrame(columns=REQUIRED_COLS)
     return pd.DataFrame(result)
 
 
 def validate_data(df, existing_ids=None):
-    """ตรวจสอบความถูกต้องของข้อมูล"""
     errors = []
     warnings = []
 
@@ -74,30 +87,36 @@ def validate_data(df, existing_ids=None):
     if empty_subjects.any():
         warnings.append(f"⚠️ พบ subject_id ว่างเปล่า {empty_subjects.sum()} รายการ")
 
-    invalid_teachers = ~df['teacher_id'].isin(TEACHER_OPTIONS) & df['teacher_id'].notna()
+    # แปลง TEACHER_OPTIONS เป็น string เพื่อเปรียบเทียบ
+    valid_teachers = [str(t) for t in TEACHER_OPTIONS]
+    valid_subjects = [str(s) for s in SUBJECT_OPTIONS]
+
+    invalid_teachers = ~df['teacher_id'].astype(str).isin(valid_teachers) & df['teacher_id'].notna()
     if invalid_teachers.any():
         bad_teachers = df.loc[invalid_teachers, 'teacher_id'].unique().tolist()
-        errors.append(f"❌ พบ teacher_id ไม่มีในระบบ: {', '.join(map(str, bad_teachers))}")
+        errors.append(
+            f"❌ พบ teacher_id ไม่มีในระบบ: {', '.join(map(str, bad_teachers))}"
+        )
 
-    invalid_subjects = ~df['subject_id'].isin(SUBJECT_OPTIONS) & df['subject_id'].notna()
+    invalid_subjects = ~df['subject_id'].astype(str).isin(valid_subjects) & df['subject_id'].notna()
     if invalid_subjects.any():
         bad_subjects = df.loc[invalid_subjects, 'subject_id'].unique().tolist()
-        errors.append(f"❌ พบ subject_id ไม่มีในระบบ: {', '.join(map(str, bad_subjects))}")
+        errors.append(
+            f"❌ พบ subject_id ไม่มีในระบบ: {', '.join(map(str, bad_subjects))}"
+        )
 
     return errors, warnings, duplicates
 
 
 def clean_data(df):
-    """ทำความสะอาดข้อมูล"""
     df = df.copy()
     for col in ['teacher_id', 'subject_id']:
         df[col] = df[col].astype(str).str.strip()
     return df
 
-
 # ==================== MAIN ====================
 subjects = fetch_subjects()
-existing_ids = subjects['teacher_id'].tolist() if not subjects.empty else []
+existing_ids = subjects['teacher_id'].astype(str).tolist() if not subjects.empty else []
 
 # ==================== IMPORT SECTION ====================
 if upload_data is not None:
@@ -111,6 +130,10 @@ if upload_data is not None:
         st.error(f"❌ ไม่พบคอลัมน์: {', '.join(missing_cols)}")
     else:
         st.subheader("📋 Preview และแก้ไขข้อมูล")
+
+        # แปลงเป็น string ก่อนแสดง
+        df['teacher_id'] = df['teacher_id'].astype(str)
+        df['subject_id'] = df['subject_id'].astype(str)
 
         edited_df = st.data_editor(
             df[REQUIRED_COLS],
@@ -133,21 +156,29 @@ if upload_data is not None:
 
         if not duplicates.empty:
             with st.expander("ดูรายการที่ซ้ำ"):
-                st.dataframe(duplicates, column_config=subject_columns_new, use_container_width=True)
+                st.dataframe(
+                    duplicates,
+                    column_config=subject_columns_new,
+                    use_container_width=True
+                )
 
         can_save = len(errors) == 0 and len(edited_df) > 0
 
-        if st.button("💾 บันทึก", type="primary", disabled=not can_save, key="save_import"):
+        if st.button("💾 บันทึก", type="primary", disabled=not can_save):
             try:
-                sql = f"INSERT INTO {TABLE_NAME} (teacher_id, subject_id) VALUES (?, ?)"
+                sql = f"""
+                    INSERT INTO {TABLE_NAME} (teacher_id, subject_id)
+                    VALUES (%s, %s)
+                """
                 count = 0
                 for _, row in edited_df.iterrows():
-                    if row['teacher_id']:
-                        db.execute(sql, (row['teacher_id'], row['subject_id']))
-                        count += 1
+                    db.execute(sql, (row['teacher_id'], row['subject_id']))
+                    count += 1
+
                 st.success(f"✅ บันทึกสำเร็จ {count} รายการ")
                 st.balloons()
                 st.rerun()
+
             except Exception as e:
                 st.error(f"❌ เกิดข้อผิดพลาด: {e}")
 
@@ -157,6 +188,10 @@ if subjects.empty:
     st.info("📭 ยังไม่มีข้อมูลในระบบ")
 else:
     st.subheader(f"📋 ข้อมูลในระบบ ({len(subjects)} รายการ)")
+
+    # แปลงเป็น string ก่อนแสดง
+    subjects['teacher_id'] = subjects['teacher_id'].astype(str)
+    subjects['subject_id'] = subjects['subject_id'].astype(str)
 
     edited_subjects = st.data_editor(
         subjects,
@@ -170,12 +205,15 @@ else:
         if st.button("💾 บันทึกการแก้ไข", type="primary"):
             try:
                 for _, row in edited_subjects.iterrows():
-                    sql = f"UPDATE {TABLE_NAME} SET subject_id=%s WHERE teacher_id=%s"
-                    db.execute(sql, (row['subject_id'], row['teacher_id']))
+                    db.execute(
+                        f"""
+                        UPDATE {TABLE_NAME}
+                        SET subject_id=%s
+                        WHERE teacher_id=%s
+                        """,
+                        (row['subject_id'], row['teacher_id'])
+                    )
                 st.success("✅ บันทึกการแก้ไขสำเร็จ")
                 st.rerun()
             except Exception as e:
                 st.error(f"❌ เกิดข้อผิดพลาด: {e}")
-
-
-
