@@ -38,29 +38,29 @@ with col2 :
 
 
 
-# รวม student_count ตาม group_id
-group_df = (
-    student_group_count
-    .groupby("group_id", as_index=False)["student_count"]
-    .sum()
-)
+# # รวม student_count ตาม group_id
+# group_df = (
+#     student_group_count
+#     .groupby("group_id", as_index=False)["student_count"]
+#     .sum()
+# )
 
-chart = alt.Chart(student_group_count).mark_bar(
-    color="#e53935"
-).encode(
-    x=alt.X(
-        "group_name:N",
-        title="กลุ่มการเรียน",
-        axis=alt.Axis(labelAngle=0)  # <<< แนวนอน
-    ),
-    y=alt.Y("sum(student_count):Q", title="จำนวนนักเรียน"),
-    tooltip=[
-        alt.Tooltip("group_name:N", title="กลุ่มการเรียน"),
-        alt.Tooltip("sum(student_count):Q", title="จำนวนนักเรียน")
-    ]
-)
+# chart = alt.Chart(student_group_count).mark_bar(
+#     color="#e53935"
+# ).encode(
+#     x=alt.X(
+#         "group_name:N",
+#         title="กลุ่มการเรียน",
+#         axis=alt.Axis(labelAngle=0)  # <<< แนวนอน
+#     ),
+#     y=alt.Y("sum(student_count):Q", title="จำนวนนักเรียน"),
+#     tooltip=[
+#         alt.Tooltip("group_name:N", title="กลุ่มการเรียน"),
+#         alt.Tooltip("sum(student_count):Q", title="จำนวนนักเรียน")
+#     ]
+# )
 
-st.altair_chart(chart, use_container_width=True)
+# st.altair_chart(chart, use_container_width=True)
 
 
 

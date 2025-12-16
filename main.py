@@ -5,6 +5,8 @@ import db
 
 controller = CookieController()
 
+role = controller.get('role')
+
 if not (controller.get('username') and controller.get('role')):
     st.title(":red[เข้าสู่ระบบ]")
     tab1, tab2 = st.tabs(['อาจารย์', 'ผู้ดูแลระบบ'])
@@ -62,11 +64,11 @@ else:
     with st.sidebar:
         st.page_link(st.Page('_pages/home.py'), label='หน้าแรก', icon=':material/home:')
 
-        if controller.get('role') == 'teacher':
+        if role == 'teacher':
             st.page_link(st.Page('_pages/teachers.py'), label='ครู', icon=':material/group:')
             st.page_link(st.Page('_pages/timetable.py'), label='ตาราง', icon=':material/table_view:')
             # เพิ่มหน้าอื่นที่ครูเข้าถึงได้
-        elif controller.get('role') == 'admin':
+        elif role == 'admin':
             st.page_link(st.Page('_pages/teachers.py'), label='ครู', icon=':material/group:')
             st.page_link(st.Page('_pages/subjects.py'), label='รายวิชา', icon=':material/book:')
             st.page_link(st.Page('_pages/rooms.py'), label='ห้องเรียน', icon=':material/meeting_room:')

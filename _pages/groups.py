@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import db
 
-st.title(':red[กลุ่มการเรียน]')
+st.title(':blue[กลุ่มการเรียน]')
 st.divider()
 upload_data = st.file_uploader("อัปโหลดไฟล์", type=["csv", "xlsx"])
 
@@ -16,8 +16,7 @@ group_columns_new = {
     "group_id": st.column_config.TextColumn("รหัสกลุ่มการเรียน", required=True),
     "group_name": st.column_config.TextColumn("ชื่อกลุ่มการเรียน", required=True),
     "student_count": st.column_config.NumberColumn("จำนวนนักเรียน", required=True, default=0),
-    "advisor": st.column_config.TextColumn("ครูประจำชั้น", required=True),
-
+    "advisor": st.column_config.TextColumn("ครูประจำชั้น", required=True)
 }
 
 # Column config สำหรับแก้ไข (group_id disabled)
@@ -25,7 +24,8 @@ group_columns_edit = {
     "group_id": st.column_config.TextColumn("รหัสกลุ่มการเรียน", disabled=True),
     "group_name": st.column_config.TextColumn("ชื่อกลุ่มการเรียน", required=True),
     "student_count": st.column_config.NumberColumn("จำนวนนักเรียน", required=True, default=0),
-    "advisor": st.column_config.TextColumn("ครูประจำชั้น", required=True),}
+    "advisor": st.column_config.TextColumn("ครูประจำชั้น", required=True)
+}
 
 
 # ==================== FUNCTIONS ====================
@@ -58,10 +58,9 @@ def validate_data(df, existing_ids=None):
     if empty_names.any():
         warnings.append(f"⚠️ พบ group_name ว่างเปล่า {empty_names.sum()} รายการ")
 
-    invalid_types = ~df['group_type'].isin(ROOM_TYPE_OPTIONS) & df['group_type'].notna()
-    if invalid_types.any():
-        bad_types = df.loc[invalid_types, 'group_type'].unique().tolist()
-        errors.append(f"❌ พบ group_type ไม่ถูกต้อง: {', '.join(map(str, bad_types))}")
+    empty_advisor = df['advisor'].isna() | (df['advisor'].astype(str).str.strip() == '')
+    if empty_advisor.any():
+        warnings.append(f"⚠️ พบ advisor ว่างเปล่า {empty_advisor.sum()} รายการ")
 
     return errors, warnings, duplicates
 
@@ -69,7 +68,7 @@ def validate_data(df, existing_ids=None):
 def clean_data(df):
     """ทำความสะอาดข้อมูล"""
     df = df.copy()
-    for col in ['group_id', 'group_name']:
+    for col in ['group_id', 'group_name', 'advisor']:
         df[col] = df[col].astype(str).str.strip()
     return df
 
@@ -118,11 +117,11 @@ if upload_data is not None:
 
         if st.button("💾 บันทึก", type="primary", disabled=not can_save, key="save_import"):
             try:
-                sql = f"INSERT INTO {TABLE_NAME} (group_id, group_name, group_type) VALUES (?, ?, ?)"
+                sql = f"INSERT INTO {TABLE_NAME} (group_id, group_name, student_count, advisor) VALUES (?, ?, ?, ?)"
                 count = 0
                 for _, row in edited_df.iterrows():
                     if row['group_id']:
-                        db.execute(sql, (row['group_id'], row['group_name'], row['group_type']))
+                        db.execute(sql, (row['group_id'], row['group_name'], row['student_count'], row['advisor']))
                         count += 1
                 st.success(f"✅ บันทึกสำเร็จ {count} รายการ")
                 st.balloons()
@@ -149,8 +148,8 @@ else:
         if st.button("💾 บันทึกการแก้ไข", type="primary"):
             try:
                 for _, row in edited_groups.iterrows():
-                    sql = f"UPDATE {TABLE_NAME} SET group_name=?, group_type=? WHERE group_id=?"
-                    db.execute(sql, (row['group_name'], row['group_type'], row['group_id']))
+                    sql = f"UPDATE {TABLE_NAME} SET group_name=?, student_count=?, advisor=? WHERE group_id=?"
+                    db.execute(sql, (row['group_name'], row['student_count'], row['advisor'], row['group_id']))
                 st.success("✅ บันทึกการแก้ไขสำเร็จ")
                 st.rerun()
             except Exception as e:
