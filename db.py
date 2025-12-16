@@ -28,3 +28,9 @@ def execute(sql, params=None):
     cursor.execute(sql, params or ())
     conn.commit()
     cursor.close() 
+
+def executemany(sql, params):
+    cursor = conn.cursor()
+    cursor.executemany(sql, params)
+    conn.commit()
+    cursor.close()

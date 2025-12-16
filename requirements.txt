@@ -1,0 +1,5 @@
+streamlit
+streamlit_cookies_controller
+pymysql
+ortools
+openpyxl
