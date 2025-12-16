@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+
+      @media print {
+        * {
+          visibility: hidden;
+        }
+
+        #export-area,
+        #export-area * {
+          visibility: visible;
+        }
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+        table-layout: fixed;
+      }
+
+      table,
+      th,
+      td {
+        border: 1px solid black;
+        font-size: 11px;
+        padding: 6px;
+      }
+
+      button {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        background: rgb(255, 108, 108);
+        color: white;
+        margin-bottom: 12px;
+      }
+
+      .subject-column {
+        text-align: left;
+        white-space: normal;
+    }
+
+    p{
+        margin: 0;
+    }
+    </style>
+</head>
+
+<body>
+    <button onclick="window.print()">Export ตารางเรียน</button>
+    <div style="background-color: white;">
+        <table id="export-area">
+            <tr>
+                <td colspan="3" rowspan="8" style="padding: 0 20px;">
+                    <img src="https://www.pic.ac.th/wp-content/uploads/2023/02/cropped-piclogo.png" width="80"
+                        height="80">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <p>$ADVISOR</p>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td class="subject-column" colspan="5">$SUBJ_1</td>
+                <td class="subject-column" colspan="5">$SUBJ_8</td>
+            </tr>
+            <tr>
+                <td class="subject-column" colspan="5">$SUBJ_2</td>
+                <td class="subject-column" colspan="5">$SUBJ_9</td>
+            </tr>
+            <tr>
+                <td class="subject-column" colspan="5">$SUBJ_3</td>
+                <td class="subject-column" colspan="5">$SUBJ_10</td>
+            </tr>
+            <tr>
+                <td class="subject-column" colspan="5">$SUBJ_4</td>
+                <td class="subject-column" colspan="5">$SUBJ_11</td>
+            </tr>
+            <tr>
+                <td class="subject-column" colspan="5">$SUBJ_5</td>
+                <td class="subject-column" colspan="5">$SUBJ_12</td>
+            </tr>
+            <tr>
+                <td class="subject-column" colspan="5">$SUBJ_6</td>
+                <td class="subject-column" colspan="5">$SUBJ_13</td>
+            </tr>
+            <tr>
+                <td class="subject-column" colspan="5">$SUBJ_7</td>
+                <td class="subject-column" colspan="5">$SUBJ_14</td>
+            </tr>
+            <tr>
+                <td rowspan="2">
+                    วัน
+                </td>
+                <td>1</td>
+                <td>2</td>
+                <td>3</td>
+                <td>4</td>
+                <td>5</td>
+                <td>6</td>
+                <td>7</td>
+                <td>8</td>
+                <td>9</td>
+                <td>10</td>
+                <td>11</td>
+                <td>12</td>
+            </tr>
+            <tr>
+                <td>08:00-09:00</td>
+                <td>08:00-09:00</td>
+                <td>08:00-09:00</td>
+                <td>08:00-09:00</td>
+                <td>08:00-09:00</td>
+                <td>08:00-09:00</td>
+                <td>08:00-09:00</td>
+                <td>08:00-09:00</td>
+                <td>08:00-09:00</td>
+                <td>08:00-09:00</td>
+                <td>08:00-09:00</td>
+                <td>08:00-09:00</td>
+            </tr>
+            <tr>
+                <td>จันทร์</td>
+                <td>$MON_1</td>
+                <td>$MON_2</td>
+                <td>$MON_3</td>
+                <td>$MON_4</td>
+                <td rowspan="5">พักกลางวัน</td>
+                <td>$MON_6</td>
+                <td>$MON_7</td>
+                <td>$MON_8</td>
+                <td>$MON_9</td>
+                <td>$MON_10</td>
+                <td>$MON_11</td>
+                <td>$MON_12</td>
+            </tr>
+            <tr>
+                <td>อังคาร</td>
+                <td>$TUE_1</td>
+                <td>$TUE_2</td>
+                <td>$TUE_3</td>
+                <td>$TUE_4</td>
+                <td>$TUE_6</td>
+                <td>$TUE_7</td>
+                <td>$TUE_8</td>
+                <td>$TUE_9</td>
+                <td>$TUE_10</td>
+                <td>$TUE_11</td>
+                <td>$TUE_12</td>
+            </tr>
+            <tr>
+                <td>พุธ</td>
+                <td>$WED_1</td>
+                <td>$WED_2</td>
+                <td>$WED_3</td>
+                <td>$WED_4</td>
+                <td>$WED_6</td>
+                <td>$WED_7</td>
+                <td>$WED_8</td>
+                <td>$WED_9</td>
+                <td>$WED_10</td>
+                <td>$WED_11</td>
+                <td>$WED_12</td>
+            </tr>
+            <tr>
+                <td>พฤหัสบดี</td>
+                <td>$THU_1</td>
+                <td>$THU_2</td>
+                <td>$THU_3</td>
+                <td>$THU_4</td>
+                <td>$THU_6</td>
+                <td>$THU_7</td>
+                <td>$THU_8</td>
+                <td>$THU_9</td>
+                <td>$THU_10</td>
+                <td>$THU_11</td>
+                <td>$THU_12</td>
+            </tr>
+            <tr>
+                <td>ศุกร์</td>
+                <td>$FRI_1</td>
+                <td>$FRI_2</td>
+                <td>$FRI_3</td>
+                <td>$FRI_4</td>
+                <td>$FRI_6</td>
+                <td>$FRI_7</td>
+                <td>$FRI_8</td>
+                <td>$FRI_9</td>
+                <td>$FRI_10</td>
+                <td>$FRI_11</td>
+                <td>$FRI_12</td>
+            </tr>
+        </table>
+    </div>
+</body>
+
+</html>

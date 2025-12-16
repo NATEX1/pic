@@ -15,11 +15,11 @@ if not (controller.get('username') and controller.get('role')):
             password = st.text_input('รหัสผ่าน', type='password')
             
             if st.form_submit_button('เข้าสู่ระบบ', type='primary'):
-                user = db.fetch_one("SELECT * FROM teachers WHERE teacher_id = %s AND idcard = %s", (username, password))
+                user = db.fetch_one("SELECT * FROM teacher WHERE teacher_id = %s AND id_card = %s", (username, password))
 
                 if user:
-                    controller.set('username', 'admin')
-                    controller.set('role', 'admin')
+                    controller.set('username', username)
+                    controller.set('role', 'teacher')
                     st.success('เข้าสู่ระบบสำเร็จ')
                     time.sleep(1.5)
                     st.rerun()
@@ -42,7 +42,7 @@ if not (controller.get('username') and controller.get('role')):
 
 
 else:
-    st.set_page_config(layout='wide')
+    st.set_page_config(page_title="ระบบตารางเรียน", layout='wide')
     pages = [
         st.Page('_pages/home.py'),
         st.Page('_pages/subjects.py'),
@@ -61,15 +61,20 @@ else:
 
     with st.sidebar:
         st.page_link(st.Page('_pages/home.py'), label='หน้าแรก', icon=':material/home:')
-        st.page_link(st.Page('_pages/teachers.py'), label='ครู', icon=':material/group:')
-        st.page_link(st.Page('_pages/subjects.py'), label='รายวิชา', icon=':material/book:')
-        st.page_link(st.Page('_pages/rooms.py'), label='ห้องเรียน', icon=':material/meeting_room:')
-        st.page_link(st.Page('_pages/groups.py'), label='กลุ่มการเรียน', icon=':material/table_view:')
-        st.page_link(st.Page('_pages/timeslot.py'), label='คาบ', icon=':material/add_row_above:')
-        st.page_link(st.Page('_pages/teach.py'), label='แผนการสอน', icon=':material/dictionary:')
-        st.page_link(st.Page('_pages/register.py'), label='ลงทะเบียนเรียน', icon=':material/list_alt:')
-        st.page_link(st.Page('_pages/timetable.py'), label='ตาราง', icon=':material/table_view:')
+
+        if controller.get('role') == 'teacher':
+            st.page_link(st.Page('_pages/teachers.py'), label='ครู', icon=':material/group:')
+            st.page_link(st.Page('_pages/timetable.py'), label='ตาราง', icon=':material/table_view:')
+            # เพิ่มหน้าอื่นที่ครูเข้าถึงได้
+        elif controller.get('role') == 'admin':
+            st.page_link(st.Page('_pages/teachers.py'), label='ครู', icon=':material/group:')
+            st.page_link(st.Page('_pages/subjects.py'), label='รายวิชา', icon=':material/book:')
+            st.page_link(st.Page('_pages/rooms.py'), label='ห้องเรียน', icon=':material/meeting_room:')
+            st.page_link(st.Page('_pages/groups.py'), label='กลุ่มการเรียน', icon=':material/table_view:')
+            st.page_link(st.Page('_pages/timeslot.py'), label='คาบ', icon=':material/add_row_above:')
+            st.page_link(st.Page('_pages/teach.py'), label='แผนการสอน', icon=':material/dictionary:')
+            st.page_link(st.Page('_pages/register.py'), label='ลงทะเบียนเรียน', icon=':material/list_alt:')
+            st.page_link(st.Page('_pages/timetable.py'), label='ตาราง', icon=':material/table_view:')
 
         st.divider()
-
         st.page_link(st.Page('_pages/logout.py'), label='ออกจากระบบ', icon=':material/logout:')

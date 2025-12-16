@@ -18,9 +18,8 @@ st.divider()
 GROUPS = [g["group_id"] for g in db.fetch_all("SELECT group_id FROM student_group")]
 
 cols = st.columns(5)
+
 with cols[0]:
-    selected_group = st.selectbox("เลือกกลุ่มการเรียน", options=GROUPS)
-with cols[4]:
     generate_button = st.button("Generate ตารางใหม่", type="primary")
 
 # Progress bar & status text
@@ -179,65 +178,150 @@ def generate_timetable():
 if generate_button:
     generate_timetable()
 
-# ======================
-# LOAD OUTPUT DATA AND RENDER
-# ======================
-rows = db.fetch_all("""
-SELECT 
-    t.day,
-    t.period,
-    s.subject_name,
-    s.subject_id,
-    te.teacher_name,
-    r.room_name
-FROM output o
-LEFT JOIN timeslot t ON o.timeslot_id = t.timeslot_id
-LEFT JOIN subject s ON o.subject_id = s.subject_id
-LEFT JOIN teacher te ON o.teacher_id = te.teacher_id
-LEFT JOIN room r ON o.room_id = r.room_id
-WHERE o.group_id = %s
-ORDER BY t.day, t.period;
-""", (selected_group,))
 
-data = {}
-DAY_MAP = {"Mon":"MON","Tue":"TUE","Wed":"WED","Thu":"THU","Fri":"FRI"}
+tabs = st.tabs(['ตารางเรียน', 'ตารางสอน'])
 
-for r in rows:
-    day = DAY_MAP.get(r["day"])
-    period = r["period"]
-    key = f"{day}_{period}"
-    data.setdefault(key, [])
-    text = f"<b>{r['subject_id']}</b><br><span style='font-size:10px'>({r['teacher_name']} - ห้อง {r['room_name']})</span>"
-    data[key].append(text)
+with tabs[0]:
+    cols = st.columns(5)
+    with cols[0]:
+        selected_group = st.selectbox("เลือกกลุ่มการเรียน", options=GROUPS)
 
-# Fill empty cells
-for d in ["MON","TUE","WED","THU","FRI"]:
-    for p in range(1,13):
-        data.setdefault(f"{d}_{p}", [])
+    # ======================
+    # LOAD OUTPUT DATA AND RENDER
+    # ======================
+    rows = db.fetch_all("""
+    SELECT 
+        t.day,
+        t.period,
+        s.subject_name,
+        s.subject_id,
+        te.teacher_name,
+        r.room_name
+    FROM output o
+    LEFT JOIN timeslot t ON o.timeslot_id = t.timeslot_id
+    LEFT JOIN subject s ON o.subject_id = s.subject_id
+    LEFT JOIN teacher te ON o.teacher_id = te.teacher_id
+    LEFT JOIN room r ON o.room_id = r.room_id
+    WHERE o.group_id = %s
+    ORDER BY t.day, t.period;
+    """, (selected_group,))
 
-# HTML string
-html_data = {k: "<br>".join(v) if v else "<p style='visibility:hidden;'>-</p>" for k,v in data.items()}
+    data = {}
+    DAY_MAP = {"Mon":"MON","Tue":"TUE","Wed":"WED","Thu":"THU","Fri":"FRI"}
 
-# Subject list
-SUBJECTS = db.fetch_all("""
-SELECT s.subject_name, s.subject_id
-FROM register r
-JOIN subject s ON r.subject_id = s.subject_id
-WHERE r.group_id=%s
-ORDER BY s.subject_id
-""",(selected_group,))
+    for r in rows:
+        day = DAY_MAP.get(r["day"])
+        period = r["period"]
+        key = f"{day}_{period}"
+        data.setdefault(key, [])
+        text = f"<b>{r['subject_id']}</b><br><span style='font-size:10px'>({r['teacher_name']} - ห้อง {r['room_name']})</span>"
+        data[key].append(text)
 
-group_data = db.fetch_one("SELECT * FROM student_group WHERE group_id = %s", (selected_group))
+    # Fill empty cells
+    for d in ["MON","TUE","WED","THU","FRI"]:
+        for p in range(1,13):
+            data.setdefault(f"{d}_{p}", [])
 
-for i in range(1,15):
-    key = f"SUBJ_{i}"
-    html_data[key] = f"[{SUBJECTS[i-1]['subject_id']}] {SUBJECTS[i-1]['subject_name']}" if i-1 < len(SUBJECTS) else "<p style='visibility:hidden;'>-</p>"
+    # HTML string
+    html_data = {k: "<br>".join(v) if v else "<p style='visibility:hidden;'>-</p>" for k,v in data.items()}
 
-html_data['GROUP_ID'] = selected_group
-html_data['ADVISOR'] = group_data['advisor']
-html_data['GROUP_NAME'] = group_data['group_name']
+    # Subject list
+    SUBJECTS = db.fetch_all("""
+    SELECT s.subject_name, s.subject_id
+    FROM register r
+    JOIN subject s ON r.subject_id = s.subject_id
+    WHERE r.group_id=%s
+    ORDER BY s.subject_id
+    """,(selected_group,))
 
-# Render HTML
-with open("timetable.html","r",encoding="utf-8") as f:
-    html = Template(f.read()).safe_substitute(html_data)
-st.components.v1.html(html,height=800,scrolling=True)
+    group_data = db.fetch_one("SELECT * FROM student_group WHERE group_id = %s", (selected_group))
+
+    for i in range(1,15):
+        key = f"SUBJ_{i}"
+        html_data[key] = f"[{SUBJECTS[i-1]['subject_id']}] {SUBJECTS[i-1]['subject_name']}" if i-1 < len(SUBJECTS) else "<p style='visibility:hidden;'>-</p>"
+
+    html_data['GROUP_ID'] = selected_group
+    html_data['ADVISOR'] = group_data['advisor']
+    html_data['GROUP_NAME'] = group_data['group_name']
+
+    # Render HTML
+    with open("timetable.html","r",encoding="utf-8") as f:
+        html = Template(f.read()).safe_substitute(html_data)
+    st.components.v1.html(html,height=800,scrolling=True)
+
+
+with tabs[1]:
+    TEACHERS = db.fetch_all("SELECT teacher_id, teacher_name FROM teacher")
+    teacher_options = {t["teacher_name"]: t["teacher_id"] for t in TEACHERS}
+
+    cols = st.columns(5)
+    with cols[0]:
+        selected_teacher_name = st.selectbox("เลือกครู", options=list(teacher_options.keys()))
+        selected_teacher_id = teacher_options[selected_teacher_name]
+
+    # ======================
+    # LOAD OUTPUT DATA
+    # ======================
+    rows = db.fetch_all("""
+    SELECT 
+        t.day,
+        t.period,
+        s.subject_name,
+        s.subject_id,
+        o.group_id,
+        r.room_name
+    FROM output o
+    LEFT JOIN timeslot t ON o.timeslot_id = t.timeslot_id
+    LEFT JOIN subject s ON o.subject_id = s.subject_id
+    LEFT JOIN room r ON o.room_id = r.room_id
+    WHERE o.teacher_id = %s
+    ORDER BY t.day, t.period, o.group_id
+    """, (selected_teacher_id,))
+
+    # ======================
+    # PROCESS DATA
+    # ======================
+    DAY_MAP = {"Mon": "MON", "Tue": "TUE", "Wed": "WED", "Thu": "THU", "Fri": "FRI"}
+    data = {}
+
+    for r in rows:
+        day = DAY_MAP.get(r["day"])
+        period = r["period"]
+        key = f"{day}_{period}"
+        data.setdefault(key, [])
+        text = f"<b>{r['subject_id']}</b><br><span style='font-size:10px'>({r['group_id']} - ห้อง {r['room_name']})</span>"
+        data[key].append(text)
+
+    # Fill empty cells
+    for d in ["MON","TUE","WED","THU","FRI"]:
+        for p in range(1,13):
+            data.setdefault(f"{d}_{p}", [])
+
+    SUBJECTS = db.fetch_all("""
+    SELECT DISTINCT s.subject_name, s.subject_id
+    FROM teach t
+    JOIN subject s ON t.subject_id = s.subject_id
+    WHERE t.teacher_id=%s
+    ORDER BY s.subject_id
+    """,(selected_teacher_id,))
+
+    html_data = {k: "<br>".join(v) if v else "<p style='visibility:hidden;'>-</p>" for k,v in data.items()}
+
+    # เพิ่มรายชื่อวิชาที่ครูสอน
+    for i in range(1,15):
+        key = f"SUBJ_{i}"
+        html_data[key] = f"[{SUBJECTS[i-1]['subject_id']}] {SUBJECTS[i-1]['subject_name']}" if i-1 < len(SUBJECTS) else "<p style='visibility:hidden;'>-</p>"
+
+    # เพิ่มชื่อครู
+    html_data['TEACHER_NAME'] = selected_teacher_name
+
+    html_data['ADVISOR'] = selected_teacher_name
+
+    # ======================
+    # RENDER HTML
+    # ======================
+    with open("timetable_teacher.html", "r", encoding="utf-8") as f:
+        template = Template(f.read())
+    html = template.safe_substitute(html_data)
+
+    st.components.v1.html(html, height=800, scrolling=True)
