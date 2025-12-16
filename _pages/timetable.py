@@ -4,6 +4,7 @@ from collections import defaultdict
 import db
 import time
 from string import Template
+import pandas as pd
 
 # ======================
 # PAGE SETUP
@@ -17,10 +18,21 @@ st.divider()
 # ======================
 GROUPS = [g["group_id"] for g in db.fetch_all("SELECT group_id FROM student_group")]
 
+
 cols = st.columns(5)
 
+output = pd.DataFrame(db.fetch_all("SELECT * FROM output"))
+
 with cols[0]:
-    generate_button = st.button("Generate ตารางใหม่", type="primary")
+    generate_button = st.button(
+        label="Generate ตารางใหม่", 
+        type="primary")
+
+with cols[1]:
+    export_output = st.download_button(label="Export Output", type="primary", 
+        data=output.to_csv(index=False).encode('utf-8'),
+        file_name='output.csv',
+        mime='text/csv')
 
 # Progress bar & status text
 progress_bar = st.progress(0)
@@ -227,7 +239,7 @@ with tabs[0]:
 
     # Subject list
     SUBJECTS = db.fetch_all("""
-    SELECT s.subject_name, s.subject_id
+    SELECT s.subject_name, s.subject_id, s.theory, s.practice, s.credit
     FROM register r
     JOIN subject s ON r.subject_id = s.subject_id
     WHERE r.group_id=%s
@@ -236,9 +248,13 @@ with tabs[0]:
 
     group_data = db.fetch_one("SELECT * FROM student_group WHERE group_id = %s", (selected_group))
 
-    for i in range(1,15):
+    for i in range(1, 15):
         key = f"SUBJ_{i}"
-        html_data[key] = f"[{SUBJECTS[i-1]['subject_id']}] {SUBJECTS[i-1]['subject_name']}" if i-1 < len(SUBJECTS) else "<p style='visibility:hidden;'>-</p>"
+        if i-1 < len(SUBJECTS):
+            s = SUBJECTS[i-1]
+            html_data[key] = f"[{s['subject_id']}] [{s['theory']}-{s['practice']}-{s['credit']}] {s['subject_name']}"
+        else:
+            html_data[key] = "<p style='visibility:hidden;'>-</p>"
 
     html_data['GROUP_ID'] = selected_group
     html_data['ADVISOR'] = group_data['advisor']
@@ -298,7 +314,7 @@ with tabs[1]:
             data.setdefault(f"{d}_{p}", [])
 
     SUBJECTS = db.fetch_all("""
-    SELECT DISTINCT s.subject_name, s.subject_id
+    SELECT DISTINCT s.subject_name, s.subject_id, s.theory, s.practice, s.credit
     FROM teach t
     JOIN subject s ON t.subject_id = s.subject_id
     WHERE t.teacher_id=%s
@@ -308,9 +324,13 @@ with tabs[1]:
     html_data = {k: "<br>".join(v) if v else "<p style='visibility:hidden;'>-</p>" for k,v in data.items()}
 
     # เพิ่มรายชื่อวิชาที่ครูสอน
-    for i in range(1,15):
+    for i in range(1, 15):
         key = f"SUBJ_{i}"
-        html_data[key] = f"[{SUBJECTS[i-1]['subject_id']}] {SUBJECTS[i-1]['subject_name']}" if i-1 < len(SUBJECTS) else "<p style='visibility:hidden;'>-</p>"
+        if i-1 < len(SUBJECTS):
+            s = SUBJECTS[i-1]
+            html_data[key] = f"[{s['subject_id']}] [{s['theory']}-{s['practice']}-{s['credit']}] {s['subject_name']}"
+        else:
+            html_data[key] = "<p style='visibility:hidden;'>-</p>"
 
     # เพิ่มชื่อครู
     html_data['TEACHER_NAME'] = selected_teacher_name
