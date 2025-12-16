@@ -5,7 +5,8 @@ conn = pymysql.connect(
     user="finorfin_pic",
     password="G5F&2!taRct9sdyv",
     database='pic_2',
-    charset="utf8"
+    charset="utf8",
+    cursorclass=pymysql.cursors.DictCursor
 )
 
 def fetch_one(sql, params=None):
