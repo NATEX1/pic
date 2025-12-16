@@ -25,6 +25,7 @@ else:
     st.set_page_config(layout='wide')
     pages = [
         st.Page('_pages/home.py'),
+        st.Page('_pages/timetable.py'),
     ]
 
     pg = st.navigation(pages, position='hidden')
@@ -32,3 +33,4 @@ else:
 
     with st.sidebar:
         st.page_link(st.Page('_pages/home.py'), label='หน้าแรก', icon=':material/home:')
+        st.page_link(st.Page('_pages/timetable.py'), label='ตาราง', icon=':material/home:')
